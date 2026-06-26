@@ -14,3 +14,8 @@ vectorstore/
 # OS files
 .DS_Store
 Thumbs.db
+
+.env
+
+# data
+data/

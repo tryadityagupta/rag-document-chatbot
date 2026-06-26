@@ -1,9 +1,9 @@
-transformers
-torch
 langchain
 langchain-community
+langchain-openai
 langchain-text-splitters
-langchain-huggingface
-sentence-transformers
 faiss-cpu
 pypdf
+python-dotenv
+fastapi
+uvicorn[standard]

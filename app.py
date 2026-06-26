@@ -1,69 +1,39 @@
 from rag.embeddings import get_embeddings
 from rag.vectorstore import load_vectorstore
 from rag.llm import get_llm
+from dotenv import load_dotenv
 
-print("\nLoading embeddings...")
+load_dotenv()
+
 embeddings = get_embeddings()
-
-print("\nLoading vectorstore...")
 vectorstore = load_vectorstore(embeddings)
-
-print("\nLoading LLM...")
 llm = get_llm()
 
 print("\nRAG Chatbot Ready! Type 'exit' to quit.\n")
 
 while True:
-    query = input("Ask a question: ")
-
+    query = input("Ask a question: ").strip()
     if query.lower() == "exit":
         break
 
     docs = vectorstore.similarity_search(query, k=5)
 
-    docs = docs[:3]
+    # ---- DEBUG: see what retrieval actually returns ----
+    print(f"\n[debug] retrieved {len(docs)} chunks")
+    context = "\n\n".join(doc.page_content for doc in docs)
+    print(f"[debug] context length: {len(context)} chars")
+    print("[debug] first chunk:", repr(context[:200]), "\n")
+    # ----------------------------------------------------
 
-    unique_docs = []
-    seen = set()
+    prompt = f"""You are a helpful assistant answering questions about a document.
+Answer ONLY using the context below. If the answer is not in the context, say "I don't know".
 
-    for doc in docs:
-        if doc.page_content not in seen:
-            unique_docs.append(doc)
-            seen.add(doc.page_content)
-
-    docs = unique_docs
-
-    context = "\n\n".join([doc.page_content for doc in docs])
-
-    print("\nRetrieved Context:\n")
-
-    for i, doc in enumerate(docs):
-        print(f"Chunk {i+1}:")
-        print(doc.page_content)
-        print("-" * 40)
-
-    prompt = f"""
-
-You are a helpful assistant answering questions about a document.
-
-Rules:
-1. Answer ONLY using the provided context.
-2. Do not invent information.
-3. If the answer is not in the context, say "I don't know".
-
-Context: 
+Context:
 {context}
 
 Question: {query}
 
-Answer:
-"""
+Answer:"""
 
-    response = llm(prompt, max_new_tokens=80, max_length=None)
-
-    answer = response[0]["generated_text"]
-    answer = answer.split("Answer:")[-1]
-    answer = answer.split("Question:")[0]
-    answer = answer.strip()
-
-    print("\nAnswer: ", answer, "\n")
+    response = llm.invoke(prompt)
+    print("Answer:", response.content, "\n")

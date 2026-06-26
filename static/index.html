@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ask the document</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #f6f7f9;
+            --surface: #ffffff;
+            --ink: #161a22;
+            --muted: #6b7280;
+            --line: #e6e8ec;
+            --accent: #4f46e5;
+            --accent-soft: #eef0fe;
+            --user-bubble: #161a22;
+            --radius: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Inter", system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app {
+            max-width: 760px;
+            margin: 0 auto;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header.bar {
+            padding: 22px 20px 16px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        header.bar h1 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        header.bar p {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        header.bar .doc {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        .thread {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 20px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .empty {
+            margin: auto;
+            text-align: center;
+            color: var(--muted);
+            max-width: 360px;
+        }
+
+        .empty .mark {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .empty h2 {
+            margin: 12px 0 6px;
+            font-size: 19px;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .empty p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .msg {
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        .msg.user {
+            align-items: flex-end;
+        }
+
+        .msg.bot {
+            align-items: flex-start;
+        }
+
+        .bubble {
+            padding: 12px 15px;
+            border-radius: var(--radius);
+            font-size: 15px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .msg.user .bubble {
+            background: var(--user-bubble);
+            color: #fff;
+            border-bottom-right-radius: 5px;
+            max-width: 78%;
+        }
+
+        .msg.bot .bubble {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-bottom-left-radius: 5px;
+            max-width: 92%;
+        }
+
+        /* Signature: the retrieved evidence behind each answer */
+        details.sources {
+            margin-top: 9px;
+            max-width: 92%;
+        }
+
+        details.sources>summary {
+            list-style: none;
+            cursor: pointer;
+            font-family: "JetBrains Mono", monospace;
+            font-size: 11.5px;
+            letter-spacing: 0.04em;
+            color: var(--accent);
+            background: var(--accent-soft);
+            border: 1px solid #e0e3fb;
+            padding: 5px 10px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            user-select: none;
+        }
+
+        details.sources>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.sources>summary .chev {
+            transition: transform .18s ease;
+        }
+
+        details.sources[open]>summary .chev {
+            transform: rotate(90deg);
+        }
+
+        .chunk {
+            margin-top: 8px;
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            background: var(--surface);
+            padding: 9px 12px;
+        }
+
+        .chunk .tag {
+            font-family: "JetBrains Mono", monospace;
+            font-size: 10.5px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .chunk .text {
+            font-size: 12.5px;
+            line-height: 1.55;
+            color: #3a3f4a;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            margin-right: 4px;
+            border-radius: 50%;
+            background: var(--muted);
+            opacity: .35;
+            animation: blink 1.2s infinite both;
+        }
+
+        .dots span:nth-child(2) {
+            animation-delay: .2s;
+        }
+
+        .dots span:nth-child(3) {
+            animation-delay: .4s;
+        }
+
+        @keyframes blink {
+
+            0%,
+            80%,
+            100% {
+                opacity: .25
+            }
+
+            40% {
+                opacity: .9
+            }
+        }
+
+        form.composer {
+            padding: 14px 20px 20px;
+            border-top: 1px solid var(--line);
+            background: var(--bg);
+        }
+
+        .field {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 8px 8px 8px 14px;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+
+        .field:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        textarea {
+            flex: 1;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            font: inherit;
+            font-size: 15px;
+            line-height: 1.5;
+            max-height: 140px;
+            color: var(--ink);
+        }
+
+        button.send {
+            border: none;
+            background: var(--accent);
+            color: #fff;
+            font: inherit;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 9px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity .15s ease;
+        }
+
+        button.send:disabled {
+            opacity: .45;
+            cursor: default;
+        }
+
+        @media (max-width: 520px) {
+            .msg.user .bubble {
+                max-width: 88%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <header class="bar">
+            <h1>Ask the document</h1>
+            <p>Retrieval-augmented answers, grounded in <span class="doc">1.pdf</span></p>
+        </header>
+
+        <div class="thread" id="thread">
+            <div class="empty" id="empty">
+                <div class="mark">RAG · FAISS · GPT-4o-mini</div>
+                <h2>Ask anything about the document</h2>
+                <p>Every answer is built only from retrieved passages — open “sources” to see exactly what it used.</p>
+            </div>
+        </div>
+
+        <form class="composer" id="composer">
+            <div class="field">
+                <textarea id="input" rows="1" placeholder="What is prompt injection?" autocomplete="off"></textarea>
+                <button class="send" id="send" type="submit">Ask</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const thread = document.getElementById("thread");
+        const empty = document.getElementById("empty");
+        const form = document.getElementById("composer");
+        const input = document.getElementById("input");
+        const send = document.getElementById("send");
+
+        input.addEventListener("input", () => {
+            input.style.height = "auto";
+            input.style.height = Math.min(input.scrollHeight, 140) + "px";
+        });
+
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                form.requestSubmit();
+            }
+        });
+
+        function addUser(text) {
+            if (empty) empty.remove();
+            const wrap = document.createElement("div");
+            wrap.className = "msg user";
+            const b = document.createElement("div");
+            b.className = "bubble";
+            b.textContent = text;
+            wrap.appendChild(b);
+            thread.appendChild(wrap);
+            scroll();
+        }
+
+        function addThinking() {
+            const wrap = document.createElement("div");
+            wrap.className = "msg bot";
+            wrap.id = "thinking";
+            wrap.innerHTML = '<div class="bubble"><span class="dots"><span></span><span></span><span></span></span></div>';
+            thread.appendChild(wrap);
+            scroll();
+        }
+
+        function addBot(answer, sources) {
+            const t = document.getElementById("thinking");
+            if (t) t.remove();
+
+            const wrap = document.createElement("div");
+            wrap.className = "msg bot";
+
+            const b = document.createElement("div");
+            b.className = "bubble";
+            b.textContent = answer;
+            wrap.appendChild(b);
+
+            if (sources && sources.length) {
+                const det = document.createElement("details");
+                det.className = "sources";
+                const sum = document.createElement("summary");
+                sum.innerHTML = '<span class="chev">›</span> ' + sources.length + ' sources retrieved';
+                det.appendChild(sum);
+                sources.forEach((s, i) => {
+                    const c = document.createElement("div");
+                    c.className = "chunk";
+                    const tag = document.createElement("div");
+                    tag.className = "tag";
+                    tag.textContent = "chunk " + (i + 1);
+                    const tx = document.createElement("div");
+                    tx.className = "text";
+                    tx.textContent = s.length > 600 ? s.slice(0, 600) + "…" : s;
+                    c.appendChild(tag);
+                    c.appendChild(tx);
+                    det.appendChild(c);
+                });
+                wrap.appendChild(det);
+            }
+
+            thread.appendChild(wrap);
+            scroll();
+        }
+
+        function scroll() { thread.scrollTop = thread.scrollHeight; }
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const q = input.value.trim();
+            if (!q) return;
+
+            addUser(q);
+            input.value = "";
+            input.style.height = "auto";
+            send.disabled = true;
+            addThinking();
+
+            try {
+                const res = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: q }),
+                });
+                const data = await res.json();
+                addBot(data.answer || "I don't know.", data.sources || []);
+            } catch (err) {
+                const t = document.getElementById("thinking");
+                if (t) t.remove();
+                addBot("Couldn't reach the server. Is the backend running?", []);
+            } finally {
+                send.disabled = false;
+                input.focus();
+            }
+        });
+    </script>
+</body>
+
+</html>

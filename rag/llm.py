@@ -1,8 +1,5 @@
-from transformers import pipeline
+from langchain_openai import ChatOpenAI
 
 
 def get_llm():
-    return pipeline(
-        "text-generation",
-        model="TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-    )
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0)

@@ -3,7 +3,11 @@ from rag.splitter import split_documents
 from rag.embeddings import get_embeddings
 from rag.vectorstore import build_vectorstore, save_vectorstore
 
-PDF_PATH = "data/resume.pdf"
+from dotenv import load_dotenv
+
+load_dotenv()
+
+PDF_PATH = "data/1.pdf"
 
 print("Loading documents...")
 docs = load_documents(PDF_PATH)
